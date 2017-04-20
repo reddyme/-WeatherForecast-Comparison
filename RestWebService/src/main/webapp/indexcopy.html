@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Weather Forcast App</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src="js/historic.js"></script>
+<link rel="stylesheet"
+	href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<link rel="stylesheet" href="/resources/demos/style.css">
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script type="text/javascript" src="/assets/script/canvasjs.min.js"></script>
+
+<script>
+  $( function() {
+    $("#datepicker").datepicker();
+    $("#button").click(function(){
+    	$('#table tr').remove();
+    	var selectVal=$('#rest').val();
+    	if(selectVal=="GET")
+    		{
+    		var txt="";
+    		var txt1="";
+  			var dateTypeVar = $('#datepicker').datepicker('getDate');
+	    	var date=$.datepicker.formatDate('yymmdd', dateTypeVar);
+	    	$.ajax({
+	    		type: 'GET',
+	    		url: 'http://localhost:8080/RestWebService/rest/weather/historical/'+date,
+	    		contentType: 'application/json; charset=utf-8',
+	    		dataType: 'json',
+	    		success: function(data){
+	 	   			txt1="<tr><th>DATE</th><th>TMAX</th><th>TMIN</th></tr>";
+	    			txt += "<tr><td>"+data.DATE+"</td><td>"+data.TMAX+"</td><td>"+data.TMIN+"</td></tr>";
+	    			$("#table").append(txt1).removeClass("hidden");
+	    			$("#table").append(txt).removeClass("hidden");
+	    		
+	    		},
+	    		 error: function () {
+	    	            alert("Record doesn't exist: May be deleted or doesn't exist");
+	    	        }
+	    	});
+    		}
+    		if(selectVal=="DELETE")
+			{
+    			var dateTypeVar = $('#datepicker').datepicker('getDate');
+    	    	var date=$.datepicker.formatDate('yymmdd', dateTypeVar);
+    	    	$.ajax({
+    	    		type: 'DELETE',
+    	    		url: 'http://localhost:8080/RestWebService/rest/weather/historical/'+date,
+    	    		dataType: 'json',
+    	    		success: function(data){
+    	    			alert("Record with date:"+date+" is Deleted");
+    	    		},
+    	    		 error: function () {
+    	    			 alert("Record with date:"+date+" is Deleted");
+    	    	        }
+    	    	});
+			}
+    		if(selectVal=="POST")
+    		{
+    			var dateTypeVar = $('#datepicker').datepicker('getDate');
+    	    	var date=$.datepicker.formatDate('yymmdd', dateTypeVar);
+    	    	var tmax = $('#TMAX').val();
+    	    	var tmin = $('#TMIN').val();
+    	    
+    	    	$.ajax({
+    	    		type: 'POST',
+    	    		url: 'http://localhost:8080/RestWebService/rest/weather/historical/',
+    	    		data: '{\"DATE\":'+date+',\"TMAX\":'+tmax+',\"TMIN\":'+tmin+'}',
+    	    		contentType: "application/json",
+    	    		dataType: 'json',
+    	    		success: function(data){
+    	    			alert("Date posted:"+date);
+    	    		},
+    	    		 error: function (data) {
+    	    			 alert("error "+data+" is Deleted");
+  
+    	    	        }
+    	    		 
+    	    	});
+    		}
+    		if(selectVal=="FORECAST")
+    		{
+    			var dateTypeVar = $('#datepicker').datepicker('getDate');
+    	    	var date=$.datepicker.formatDate('yymmdd', dateTypeVar);
+    	    	$.ajax({
+    	    		type: 'GET',
+    	    		url: 'http://localhost:8080/RestWebService/rest/weather/forecast/'+date,
+    	    		contentType: 'application/json; charset=utf-8',
+    	    		dataType: 'json',
+    	    		success: function(data){
+    	    			var output= "<ul>";
+    	    			var txt="";
+    	    			var txt1="<tr><th>DATE</th><th>TMAX</th><th>TMIN</th></tr>";
+    	    			for (i=0; i < data.length; i++){
+    	    				txt += "<tr><td>"+data[i].DATE+"</td><td>"+data[i].TMAX+"</td><td>"+data[i].TMIN+"</td></tr>";
+    	    			}
+    	    			$("#table").append(txt1).removeClass("hidden");
+    	    			$("#table").append(txt).removeClass("hidden");
+    	    		}
+    	    	});
+    		}
+    });
+  } );
+</script>
+<style>
+div.ui-datepicker{
+ font-size:20px;
+}
+body {
+	background-image: url("images/forecast.jpg");
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+	background-size: 100%;
+}
+.pic-date {
+	position: absolute;
+	height: auto;
+	width: 800 px;
+	left: 40%;
+	margin-right: auto;
+	margin-left: auto;
+	margin-top:11px;
+	color: white;
+}
+</style>
+</head>
+<body>
+<form name="myform">
+	<div id="mainPage" class="pic-date">
+			<h2>Weather Forecast</h2> Date: <input type="text" id="datepicker" size="13" style="height:13px;" />
+			
+			<select id="rest" onchange="if (this.value=='POST'){this.form['TMAX'].style.visibility='visible';this.form['TMIN'].style.visibility='visible' }else {this.form['TMAX'].style.visibility='hidden';this.form['TMIN'].style.visibility='hidden'};">
+			<option value="GET">GET</option>
+			<option value="DELETE">DELETE</option>
+			<option value="POST">POST</option>
+			<option value="FORECAST">FORECAST</option>
+			</select>
+			
+			<input type="button" id="button" value="submit">
+			<br></br>
+			<input type="text" placeholder="TMAX" id="TMAX" size="13" style="visibility:hidden;" />
+			<br></br>
+			<input type="text" placeholder="TMIN" id="TMIN" size="13" style="visibility:hidden;" />
+			<br></br>
+			
+			<table id="table" class="hidden" border="1">
+			</table>	
+		
+	</div>
+	<div id="flot-placeholder"></div>
+	</form>
+</body>
+</html>
+

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Weather Forecast App</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src="js/historic.js"></script>
+<link rel="stylesheet"
+	href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script type="text/javascript" src="jquery.canvasjs.min.js"></script>
+<script>
+  $(function() {
+    $("#datepicker").datepicker({
+        changeMonth: true,
+        changeYear: true,
+        yearRange:'2013:2100'
+    });
+    $("#button").click(function(){
+    	var dateChecker=$('#datepicker').datepicker('getDate');
+    	if(dateChecker==null || dateChecker=='')
+    		alert("No date selected");
+    	else
+    		{
+    	
+    	$('#table tr').remove();
+    	$('#table2 tr').remove();
+    	var selectVal=$('#rest').val();
+    	if(selectVal=="GET")
+    		{
+    		var txt="";
+    		var txt1="";
+  			var dateTypeVar = $('#datepicker').datepicker('getDate');
+	    	var date=$.datepicker.formatDate('yymmdd', dateTypeVar);
+	    	$.ajax({
+	    		type: 'GET',
+	    		url: 'http://50.112.32.181:8080/RestWebService/rest/weather/historical/'+date,
+	    		contentType: 'application/json; charset=utf-8',
+	    		dataType: 'json',
+	    		success: function(data){
+	 	   			txt1="<tr><th>DATE</th><th>TMAX</th><th>TMIN</th></tr>";
+	    			txt += "<tr><td>"+data.DATE+"</td><td>"+data.TMAX+"</td><td>"+data.TMIN+"</td></tr>";
+	    			$("#table").append(txt1).removeClass("hidden");
+	    			$("#table").append(txt).removeClass("hidden");
+	    		
+	    		},
+	    		 error: function () {
+	    	            alert("Record doesn't exist: May be deleted or doesn't exist");
+	    	        }
+	    	});
+    		}
+    		if(selectVal=="DELETE")
+			{
+    			var dateTypeVar = $('#datepicker').datepicker('getDate');
+    	    	var date=$.datepicker.formatDate('yymmdd', dateTypeVar);
+    	    	$.ajax({
+    	    		type: 'DELETE',
+    	    		url: 'http://50.112.32.181:8080/RestWebService/rest/weather/historical/'+date,
+    	    		dataType: 'json',
+    	    		success: function(data){
+    	    			alert("Record with date:"+date+" is Deleted");
+    	    		},
+    	    		 error: function () {
+    	    			 alert("Record with date:"+date+" is Deleted");
+    	    	        }
+    	    	});
+			}
+    		if(selectVal=="POST")
+    		{
+    			var dateTypeVar = $('#datepicker').datepicker('getDate');
+    	    	var date=$.datepicker.formatDate('yymmdd', dateTypeVar);
+    	    	var tmax = $('#TMAX').val();
+    	    	var tmin = $('#TMIN').val();
+    	    
+    	    	$.ajax({
+    	    		type: 'POST',
+    	    		url: 'http://50.112.32.181:8080/RestWebService/rest/weather/historical/',
+    	    		data: '{\"DATE\":'+date+',\"TMAX\":'+tmax+',\"TMIN\":'+tmin+'}',
+    	    		contentType: "application/json",
+    	    		dataType: 'json',
+    	    		success: function(data){
+    	    			alert("Date posted:"+date);
+    	    		},
+    	    		 error: function (data) {
+    	    			 alert("error "+data+" is Deleted");
+  
+    	    	        }
+    	    		 
+    	    	});
+    		}
+    		if(selectVal=="FORECAST")
+    		{
+    			var dateTypeVar = $('#datepicker').datepicker('getDate');
+    	    	var date=$.datepicker.formatDate('yymmdd', dateTypeVar);
+  
+    			function testAjax(handleData) {
+		    	    	$.ajax({
+		    	    		type: 'GET',
+		    	    		url: 'http://50.112.32.181:8080/RestWebService/rest/weather/forecast/'+date,
+		    	    		contentType: 'application/json; charset=utf-8',
+		    	    		dataType: 'json',
+		    	    		success: function(data){
+		    	    			handleData(data); 
+		    	    			var output= "<ul>";
+		    	    			var txt="";
+		    	    			var txt1="<tr><th>DATE</th><th>TMAX</th><th>TMIN</th></tr>";
+		    	    			for (i=0; i < data.length; i++){
+		    	    				text=data[i].DATE;
+		    	    				
+		    	    				txt += "<tr><td>"+data[i].DATE+"</td><td>"+data[i].TMAX+"</td><td>"+data[i].TMIN+"</td></tr>";
+		    	    			}
+		    	    			$("#table").append(txt1).removeClass("hidden");
+		    	    			$("#table").append(txt).removeClass("hidden");
+		    	    		}
+		    	    	});
+    			}
+    			testAjax(function(output){
+    	    	var chart = new CanvasJS.Chart("chartContainers1",{            
+    	    		title:{
+    	    			text: "Weather Forecast for 7 days",              
+    	    		},
+    	    		axisY: {
+    	    			includeZero: false,
+    	    			suffix: "°F",
+    	    			maximum: 100,
+    	    			gridThickness: 0
+    	    		},
+    	    		toolTip:{
+    	    			shared: true,
+    	    			content: "{name} </br> <strong>Temperature: </strong> </br> Min: {y[0]}°C, Max: {y[1]}°C",
+    	    		},
+    	    		data: [
+    	    		{
+    	    			type: "rangeSplineArea",
+    	    			fillOpacity: 0,
+    	    			color: "#91AAB1",
+    	    			indexLabelFormatter: formatter,
+    	    			dataPoints: [
+    	    				{ label: output[0].DATE, y: [output[0].TMIN, output[0].TMAX], name: "rainy" },
+    	    				{ label: output[1].DATE, y: [output[1].TMIN, output[1].TMAX], name: "rainy" },
+    	    				{ label: output[2].DATE, y: [output[2].TMIN, output[2].TMAX], name: "sunny" },
+    	    				{ label: output[3].DATE, y: [output[3].TMIN, output[3].TMAX], name: "sunny" },
+    	    				{ label: output[4].DATE, y: [output[4].TMIN, output[4].TMAX], name: "cloudy" },
+    	    				{ label: output[5].DATE, y: [output[5].TMIN, output[5].TMAX], name: "sunny" },
+    	    				{ label: output[6].DATE, y: [output[6].TMIN, output[6].TMAX], name: "rainy" },
+    	    			]
+    	    		}]
+    	    	});
+    	    	chart.render();
+    	    	function formatter(e) {
+    	    		if(e.index === 0 && e.dataPoint.x === 0) {
+    	    			return " Low " + e.dataPoint.y[e.index];
+    	    		}
+    	    		if(e.index == 1 && e.dataPoint.x === 0) {
+    	    			return " High " + e.dataPoint.y[e.index];
+    	    		}
+    	    		else{
+    	    			return e.dataPoint.y[e.index];
+    	    		}
+    	    	} 
+    			});
+    			
+
+    			function testAjax1(handleData) {
+	    	    	$.ajax({
+	    	    		type: 'GET',
+	    	    		url: 'http://50.112.32.181:8080/RestWebService/rest/weather/forecast-api/'+date,
+	    	    		contentType: 'application/json; charset=utf-8',
+	    	    		dataType: 'json',
+	    	    		success: function(data){
+	    	    			handleData(data); 
+	    	    			var output= "<ul>";
+	    	    			var txt="";
+	    	    			var txt1="<tr><th>DATE</th><th>TMAX</th><th>TMIN</th></tr>";
+	    	    			for (i=0; i < data.length; i++){
+	    	    				text=data[i].DATE;
+	    	    				
+	    	    				txt += "<tr><td>"+data[i].DATE+"</td><td>"+data[i].TMAX+"</td><td>"+data[i].TMIN+"</td></tr>";
+	    	    			}
+	    	    			$("#table2").append(txt1).removeClass("hidden");
+	    	    			$("#table2").append(txt).removeClass("hidden");
+	    	    		}
+	    	    	});
+			}
+			testAjax1(function(output){
+	    	var chart = new CanvasJS.Chart("chartContainers2",{            
+	    		title:{
+	    			text: "Weather Forecast-API for 7 days",              
+	    		},
+	    		axisY: {
+	    			includeZero: false,
+	    			suffix: "°F",
+	    			maximum: 100,
+	    			gridThickness: 0
+	    		},
+	    		toolTip:{
+	    			shared: true,
+	    			content: "{name} </br> <strong>Temperature: </strong> </br> Min: {y[0]}°C, Max: {y[1]}°C",
+	    		},
+	    		data: [
+	    		{
+	    			type: "rangeSplineArea",
+	    			fillOpacity: 0,
+	    			color: "#91AAB1",
+	    			indexLabelFormatter: formatter1,
+	    			dataPoints: [
+	    				{ label: output[0].DATE, y: [output[0].TMIN, output[0].TMAX], name: "rainy" },
+	    				{ label: output[1].DATE, y: [output[1].TMIN, output[1].TMAX], name: "rainy" },
+	    				{ label: output[2].DATE, y: [output[2].TMIN, output[2].TMAX], name: "sunny" },
+	    				{ label: output[3].DATE, y: [output[3].TMIN, output[3].TMAX], name: "sunny" },
+	    				{ label: output[4].DATE, y: [output[4].TMIN, output[4].TMAX], name: "cloudy" },
+	    				{ label: output[5].DATE, y: [output[5].TMIN, output[5].TMAX], name: "sunny" },
+	    				{ label: output[6].DATE, y: [output[6].TMIN, output[6].TMAX], name: "rainy" },
+	    			]
+	    		}]
+	    	});
+	    	chart.render();
+	    	function formatter1(e) {
+	    		if(e.index === 0 && e.dataPoint.x === 0) {
+	    			return " Low " + e.dataPoint.y[e.index];
+	    		}
+	    		if(e.index == 1 && e.dataPoint.x === 0) {
+	    			return " High " + e.dataPoint.y[e.index];
+	    		}
+	    		else{
+	    			return e.dataPoint.y[e.index];
+	    		}
+	    	} 
+			});
+			
+    	    }
+    		}	
+    });
+  } );
+</script>
+<style>
+
+div.ui-datepicker{
+ font-size:10px;
+}
+body {
+	background-color:black;
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+	background-size: 100%;
+}
+.pic-date {
+	position: absolute;
+	height: auto;
+	width: 800 px;
+	left: 40%;
+	margin-right: auto;
+	margin-left: auto;
+	margin-top:11px;
+	color: white;
+}
+
+.chartContainers1 {
+	position: "relative";
+	height: 300px; 
+	width: 45%; 
+	top:200px;
+        color: white;
+        border-radius: 1em;
+        padding: 1em;
+        position: absolute;
+        top: 80%;
+        left: 25%;
+        margin-right: -50%;
+        transform: translate(-50%, -50%)
+}
+.chartContainers2 {
+	position: "relative";
+	height: 300px; 
+	width: 45%; 
+	top:200px;
+        color: white;
+        border-radius: 1em;
+        padding: 1em;
+        position: absolute;
+        top: 80%;
+        right: 25%;
+        margin-right: -50%;
+        transform: translate(-50%, -50%)
+}
+#table {
+	 
+	top:100px;
+        position: absolute;
+        left: 10%;
+        margin-right: 0px;
+        margin-left: -250px;
+
+}
+#table2
+{
+position: "absolute";
+right:25%;
+margin-right: 0px;
+margin-left: 250px;
+}
+
+
+</style>
+</head>
+<body>
+<form name="myform">
+	<div id="mainPage" class="pic-date">
+			<h2>Weather Forecast</h2> Date: <input type="text" id="datepicker" size="13" style="height:13px;" />
+			
+			<select id="rest" >
+			<!-- onchange="if (this.value=='POST'){this.form['TMAX'].style.visibility='visible';this.form['TMIN'].style.visibility='visible' }else {this.form['TMAX'].style.visibility='hidden';this.form['TMIN'].style.visibility='hidden'};" -->
+			<option value="FORECAST">FORECAST</option>
+			</select>
+			
+			<input type="button" id="button" value="submit">
+			<br></br>
+			<!--  
+			<input type="text" placeholder="TMAX" id="TMAX" size="13" style="visibility:hidden;" />
+			<br></br>
+			<input type="text" placeholder="TMIN" id="TMIN" size="13" style="visibility:hidden;" />
+			<br></br>
+			-->
+
+			<table id="table" class="hidden" border="1">
+			</table>	
+			<table id="table2" class="hidden" border="1">
+			</table>
+			
+		
+	</div>
+	
+	<div id="chartContainers1" class="chartContainers1"></div>
+	<div id="chartContainers2" class="chartContainers2"></div>
+	
+	
+	</form>
+</body>
+</html>
+
