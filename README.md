@@ -9,5 +9,5 @@
 3. All the operations done in memory, No database is involved.
 
 ##Final URL after the deployment
-http://50.112.32.181:8080/RestWebService/index.html
+http://34.210.24.117:8080/RestWebService/index.html
 
